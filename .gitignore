@@ -2,4 +2,5 @@ bin/
 *.class
 *.dex
 R.java
-target
+target/
+gen/
