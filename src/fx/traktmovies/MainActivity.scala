@@ -25,6 +25,7 @@ object Util {
 
 class MovieAdapter(context: Context, movies: Array[Movie])
   extends ArrayAdapter[Movie](context, R.layout.movie_list_row, movies) {
+  import Util._
 
   override def getView(position: Int, convertView: View, parent: ViewGroup): View = {
     val inflater: LayoutInflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE).asInstanceOf[LayoutInflater]
@@ -32,7 +33,14 @@ class MovieAdapter(context: Context, movies: Array[Movie])
     val field_title: TextView = row.findViewById(R.id.movie_title).asInstanceOf[TextView]
     val field_poster: View = row.findViewById(R.id.movie_poster)
 
+    // Set text
     field_title.setText(movies(position).title)
+
+    // Set image
+    movies(position).posterImage onSuccess {
+      case d => ui(context.asInstanceOf[Activity]) { field_poster.setBackgroundDrawable(d) }
+    }
+
     return row
   }
 }
