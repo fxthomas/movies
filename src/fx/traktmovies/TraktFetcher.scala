@@ -6,6 +6,7 @@ import scala.concurrent._
 import ExecutionContext.Implicits.global
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 
 import java.net.URL;
 import java.io.InputStream;
@@ -20,18 +21,18 @@ object Additions {
 /**
  * Case class containing movie data
  */
-case class Movie (title: String, year: Long, poster: String) {
+case class Movie (title: String, year: Long, images: Map[String, String]) {
   override def toString() = title + " (" + year + ")"
-  lazy val image: Future[Drawable] = future {
+  lazy val posterImage: Future[Drawable] = future {
     Drawable.createFromStream(
-      new URL(poster).getContent().asInstanceOf[InputStream],
+      new URL(images("poster")).getContent().asInstanceOf[InputStream],
       "src name"
     );
   }
 }
 
 object MovieJsonProtocol extends DefaultJsonProtocol {
-  implicit val movieFormat = jsonFormat(Movie, "title", "year", "poster")
+  implicit val movieFormat = jsonFormat(Movie, "title", "year", "images")
 }
 
 /**

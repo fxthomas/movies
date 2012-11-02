@@ -17,6 +17,12 @@ import android.graphics.drawable.Drawable
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 
+object Util {
+  def ui(activity: Activity)(fun: => Unit) = {
+      activity.runOnUiThread(new Runnable() { def run() = fun })
+  }
+}
+
 class MovieAdapter(context: Context, movies: Array[Movie])
   extends ArrayAdapter[Movie](context, R.layout.movie_list_row, movies) {
 
@@ -32,6 +38,8 @@ class MovieAdapter(context: Context, movies: Array[Movie])
 }
 
 class MainActivity extends Activity {
+  import Util._
+
   override def onCreate(savedInstanceState: Bundle) = {
     super.onCreate (savedInstanceState);
     setContentView(R.layout.activity_main);
@@ -43,7 +51,7 @@ class MainActivity extends Activity {
     }
 
     movies onSuccess {
-      case movies_list => listView.setAdapter(new MovieAdapter(this,movies_list.toArray))
+      case movies_list => ui(this) { listView.setAdapter(new MovieAdapter(this,movies_list.toArray)) }
     }
 
     movies onFailure {
