@@ -5,11 +5,8 @@ import spray.json._
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 
-import android.graphics.drawable.Drawable
+import android.graphics.Bitmap
 import android.util.Log
-
-import java.net.URL;
-import java.io.InputStream;
 
 /**
  * Default object to add before parsing JSON from Trakt
@@ -22,12 +19,14 @@ object Additions {
  * Case class containing movie data
  */
 case class Movie (title: String, year: Long, images: Map[String, String]) {
+  // Convert movie to string
   override def toString() = title + " (" + year + ")"
-  lazy val posterImage: Future[Drawable] = future {
-    Drawable.createFromStream(
-      new URL(images("poster")).getContent().asInstanceOf[InputStream],
-      "src name"
-    );
+
+  // Future for the poster image
+  lazy val poster: Future[Bitmap] = future {
+    blocking {
+      BitmapDecoder.download (images("poster"), 48, 48)
+    }
   }
 }
 
