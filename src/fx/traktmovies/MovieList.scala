@@ -11,11 +11,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.Window
+import android.view.inputmethod.InputMethodManager
 import android.widget.ListView
 import android.widget.GridView
 import android.widget.TextView
 import android.widget.ImageView
 import android.widget.SearchView
+import android.widget.ProgressBar
 import android.widget.ArrayAdapter
 import android.util.Log
 import android.graphics.drawable.Drawable
@@ -74,31 +76,51 @@ class MovieAdapter(context: Context, movies: Array[Movie])
 
 class MovieList extends Activity with SearchView.OnQueryTextListener {
   import Util._
+  var progressView: ProgressBar = null
+  var listView: GridView = null
+  var searchView: SearchView = null
 
   def searchMovie(movie: String) = {
-    val listView: GridView = findViewById(R.id.movie_list).asInstanceOf[GridView]
+    progressView.setVisibility(View.VISIBLE)
+    listView.setVisibility(View.GONE)
+
     val movies = future { Trakt.searchMovie(movie) }
     movies onSuccess {
       case movies_list => {
-        ui(this) { listView.setAdapter(new MovieAdapter(this,movies_list.toArray)) }
+        ui(this) {
+          listView.setAdapter(new MovieAdapter(this,movies_list.toArray))
+          listView.setVisibility(View.VISIBLE)
+          progressView.setVisibility(View.GONE)
+        }
       }
     }
     movies onFailure {
-      case e: Exception => { Log.i("Future-Exception", e.getMessage) }
+      case e: Exception => {
+        Log.i("Future-Exception", e.getMessage)
+        listView.setAdapter(null)
+        listView.setVisibility(View.VISIBLE)
+        progressView.setVisibility(View.GONE)
+      }
     }
   }
   
   def handleIntent(intent: Intent) = {
-    Log.i ("MovieList", "Handling intent " + intent.getAction())
     if (Intent.ACTION_SEARCH equals (intent.getAction())) {
       searchMovie (intent.getStringExtra (SearchManager.QUERY))
     }
   }
 
   override def onCreate(savedInstanceState: Bundle) = {
+    // Configure activity
     super.onCreate (savedInstanceState);
-    getWindow().requestFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
+    requestWindowFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
     setContentView(R.layout.activity_main)
+
+    // Configure subviews
+    progressView = findViewById(R.id.movie_list_progress).asInstanceOf[ProgressBar]
+    listView = findViewById(R.id.movie_list).asInstanceOf[GridView]
+
+    // Handle intent, if necessary
     handleIntent(getIntent())
   }
 
@@ -109,14 +131,22 @@ class MovieList extends Activity with SearchView.OnQueryTextListener {
     getMenuInflater().inflate(R.menu.activity_main, menu);
 
     // Configure search view
-    val searchView = menu.findItem(R.id.menu_search).getActionView().asInstanceOf[SearchView]
+    searchView = menu.findItem(R.id.menu_search).getActionView().asInstanceOf[SearchView]
     searchView.setOnQueryTextListener(this)
     return true;
   }
 
   def onQueryTextChange(text: String) = { true }
   def onQueryTextSubmit(text: String) = {
+    // Hide keyboard
+    getSystemService(Context.INPUT_METHOD_SERVICE)
+    .asInstanceOf[InputMethodManager]
+    .hideSoftInputFromWindow(searchView.getWindowToken(), 0)
+
+    // Search for movie
     searchMovie(text)
+
+    // And return true
     true
   }
 }
