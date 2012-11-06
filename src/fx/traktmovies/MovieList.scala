@@ -3,7 +3,9 @@ package fx.traktmovies
 import android.os.Bundle
 import android.os.AsyncTask
 import android.app.Activity
+import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +15,7 @@ import android.widget.ListView
 import android.widget.GridView
 import android.widget.TextView
 import android.widget.ImageView
+import android.widget.SearchView
 import android.widget.ArrayAdapter
 import android.util.Log
 import android.graphics.drawable.Drawable
@@ -69,30 +72,51 @@ class MovieAdapter(context: Context, movies: Array[Movie])
   }
 }
 
-class MainActivity extends Activity {
+class MovieList extends Activity with SearchView.OnQueryTextListener {
   import Util._
 
-  override def onCreate(savedInstanceState: Bundle) = {
-    super.onCreate (savedInstanceState);
-    getWindow().requestFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
-    setContentView(R.layout.activity_main)
-
+  def searchMovie(movie: String) = {
     val listView: GridView = findViewById(R.id.movie_list).asInstanceOf[GridView]
-    val movies = future { Trakt.searchMovie("spider-man") }
-
+    val movies = future { Trakt.searchMovie(movie) }
     movies onSuccess {
       case movies_list => {
         ui(this) { listView.setAdapter(new MovieAdapter(this,movies_list.toArray)) }
       }
     }
-
     movies onFailure {
       case e: Exception => { Log.i("Future-Exception", e.getMessage) }
     }
   }
+  
+  def handleIntent(intent: Intent) = {
+    Log.i ("MovieList", "Handling intent " + intent.getAction())
+    if (Intent.ACTION_SEARCH equals (intent.getAction())) {
+      searchMovie (intent.getStringExtra (SearchManager.QUERY))
+    }
+  }
+
+  override def onCreate(savedInstanceState: Bundle) = {
+    super.onCreate (savedInstanceState);
+    getWindow().requestFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
+    setContentView(R.layout.activity_main)
+    handleIntent(getIntent())
+  }
+
+  override def onNewIntent(intent: Intent) = { setIntent(intent); handleIntent(intent) }
 
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
+    // Inflate menu from XML
     getMenuInflater().inflate(R.menu.activity_main, menu);
+
+    // Configure search view
+    val searchView = menu.findItem(R.id.menu_search).getActionView().asInstanceOf[SearchView]
+    searchView.setOnQueryTextListener(this)
     return true;
+  }
+
+  def onQueryTextChange(text: String) = { true }
+  def onQueryTextSubmit(text: String) = {
+    searchMovie(text)
+    true
   }
 }

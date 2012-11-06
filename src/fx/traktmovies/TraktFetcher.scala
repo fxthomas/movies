@@ -26,7 +26,7 @@ case class Movie (title: String, year: Long, images: Map[String, String]) {
   lazy val poster: Future[Bitmap] = future {
     blocking {
       val poster_small = images("poster").replaceFirst("(\\.[^.]*)?$", "-300$0")
-      BitmapDecoder.download (poster_small)
+      BitmapDecoder.download (poster_small, 300, 450)
     }
   }
 }

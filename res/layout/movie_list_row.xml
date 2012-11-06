@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/movie_list_row"
-    android:layout_width="match_parent"
-    android:layout_height="48dp"
-    android:weightSum="1."
-    android:orientation="horizontal">
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" >
 
     <ImageView
         android:id="@+id/movie_poster"
-        android:layout_width="48dp"
-        android:layout_height="48dp" />
+        android:layout_width="fill_parent"
+        android:layout_height="300dp" />
 
     <TextView
         android:id="@+id/movie_title"
-        android:layout_width="0dp"
+        android:layout_width="fill_parent"
         android:layout_height="48dp"
-        android:layout_gravity="right|center_vertical"
-        android:layout_weight="1."
-        android:gravity="center_vertical"
+        android:layout_gravity="bottom"
+        android:gravity="center"
         android:text=""
-        android:textSize="10pt" />
+        android:background="#88000000"
+        android:textSize="10pt"
+        android:textColor="#ffeeeeee" />
 
-</LinearLayout>
+</FrameLayout>
