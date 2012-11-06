@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.Window
 import android.widget.ListView
+import android.widget.GridView
 import android.widget.TextView
 import android.widget.ImageView
 import android.widget.ArrayAdapter
@@ -76,7 +77,7 @@ class MainActivity extends Activity {
     getWindow().requestFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
     setContentView(R.layout.activity_main)
 
-    val listView: ListView = findViewById(R.id.movie_list).asInstanceOf[ListView]
+    val listView: GridView = findViewById(R.id.movie_list).asInstanceOf[GridView]
     val movies = future { Trakt.searchMovie("spider-man") }
 
     movies onSuccess {

@@ -26,6 +26,12 @@ object BitmapDecoder {
     } else 1
   }
 
+  def download(urlString: String): Bitmap = {
+    val image_stream = new BufferedInputStream(new URL(urlString).getContent().asInstanceOf[InputStream])
+    val image_buffer = toByteArray(image_stream)
+    return BitmapFactory.decodeByteArray (image_buffer, 0, image_buffer.length)
+  }
+
   def download(urlString: String, reqWidth: Int, reqHeight: Int): Bitmap = {
     // Create input stream from URL
     val image_stream = new BufferedInputStream(new URL(urlString).getContent().asInstanceOf[InputStream])
