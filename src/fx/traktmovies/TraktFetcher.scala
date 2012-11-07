@@ -18,7 +18,7 @@ object Additions {
 /**
  * Case class containing movie data
  */
-case class Movie (title: String, year: Long, images: Map[String, String]) {
+case class Movie (title: String, year: Long, images: Map[String, String], overview: String) {
   // Convert movie to string
   override def toString() = title + " (" + year + ")"
 
@@ -32,7 +32,7 @@ case class Movie (title: String, year: Long, images: Map[String, String]) {
 }
 
 object MovieJsonProtocol extends DefaultJsonProtocol {
-  implicit val movieFormat = jsonFormat(Movie, "title", "year", "images")
+  implicit val movieFormat = jsonFormat(Movie, "title", "year", "images", "overview")
 }
 
 /**
@@ -53,9 +53,12 @@ object Trakt {
   /**
    * Search for movie
    */
-  def searchMovie (name: String): List[Movie] = {
+  def searchMovie (name: String): Array[Movie] = {
     val enc = java.net.URLEncoder.encode (name, "UTF-8");
     val res = scala.io.Source.fromURL ("http://api-trakt.apigee.com/search/movies.json/" + API_KEY + "/" + enc).mkString;
-    res.asJson.convertTo[List[Movie]]
+    res.asJson.convertTo[Array[Movie]]
+  }
+
+  def login (username: String) = {
   }
 }

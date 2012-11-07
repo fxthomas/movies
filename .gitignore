@@ -4,3 +4,4 @@ bin/
 R.java
 target/
 gen/
+.*.swp

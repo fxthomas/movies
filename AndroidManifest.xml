@@ -8,7 +8,7 @@
     <!-- Describe as searchable -->
     <meta-data
       android:name="android.app.default_searchable"
-      android:value=".MovieList" />
+      android:value=".MovieListView" />
     <meta-data
       android:name="android.app.searchable"
       android:resource="@xml/searchable" />
@@ -16,7 +16,7 @@
     <!-- Main activity -->
     <activity
       android:label="@string/title_movie_list"
-      android:name=".MovieList"
+      android:name=".MovieListView"
       android:theme="@android:style/Theme.Holo" >
 
       <!-- Main intent -->
@@ -29,6 +29,14 @@
       <intent-filter>
         <action android:name="android.intent.action.SEARCH" />
       </intent-filter>
+    </activity>
+
+    <!-- Movie info activity -->
+    <activity
+      android:label="Movie"
+      android:name=".MovieInfoView"
+      android:theme="@android:style/Theme.Holo" >
+
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
       </intent-filter>

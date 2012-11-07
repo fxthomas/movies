@@ -1,7 +1,6 @@
 package fx.traktmovies
 
 import android.os.Bundle
-import android.os.AsyncTask
 import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
@@ -19,18 +18,13 @@ import android.widget.ImageView
 import android.widget.SearchView
 import android.widget.ProgressBar
 import android.widget.ArrayAdapter
+import android.widget.AdapterView
 import android.util.Log
 import android.graphics.drawable.Drawable
 import android.graphics.Bitmap
 
 import scala.concurrent._
 import ExecutionContext.Implicits.global
-
-object Util {
-  def ui(activity: Activity)(fun: => Unit) = {
-      activity.runOnUiThread(new Runnable() { def run() = fun })
-  }
-}
 
 class MovieViewHolder(v: View) {
   // View fields
@@ -74,32 +68,38 @@ class MovieAdapter(context: Context, movies: Array[Movie])
   }
 }
 
-class MovieList extends Activity with SearchView.OnQueryTextListener {
+class MovieListView extends Activity with SearchView.OnQueryTextListener with AdapterView.OnItemClickListener {
   import Util._
+
   var progressView: ProgressBar = null
   var listView: GridView = null
   var searchView: SearchView = null
 
   def searchMovie(movie: String) = {
+    MovieListView.movies = null
     progressView.setVisibility(View.VISIBLE)
     listView.setVisibility(View.GONE)
 
-    val movies = future { Trakt.searchMovie(movie) }
-    movies onSuccess {
-      case movies_list => {
+    val f_movies = future { Trakt.searchMovie(movie) }
+    f_movies onSuccess {
+      case m => {
         ui(this) {
-          listView.setAdapter(new MovieAdapter(this,movies_list.toArray))
+          MovieListView.movies = m
+          listView.setAdapter(new MovieAdapter(this,m))
           listView.setVisibility(View.VISIBLE)
           progressView.setVisibility(View.GONE)
         }
       }
     }
-    movies onFailure {
+    f_movies onFailure {
       case e: Exception => {
-        Log.i("Future-Exception", e.getMessage)
-        listView.setAdapter(null)
-        listView.setVisibility(View.VISIBLE)
-        progressView.setVisibility(View.GONE)
+        Log.i("Future-Exception", e.toString)
+        ui(this) {
+          listView.setAdapter(null)
+          listView.setVisibility(View.VISIBLE)
+          progressView.setVisibility(View.GONE)
+          error(this, "Trakt is unavailable").show
+        }
       }
     }
   }
@@ -119,6 +119,7 @@ class MovieList extends Activity with SearchView.OnQueryTextListener {
     // Configure subviews
     progressView = findViewById(R.id.movie_list_progress).asInstanceOf[ProgressBar]
     listView = findViewById(R.id.movie_list).asInstanceOf[GridView]
+    listView.setOnItemClickListener(this)
 
     // Handle intent, if necessary
     handleIntent(getIntent())
@@ -149,4 +150,21 @@ class MovieList extends Activity with SearchView.OnQueryTextListener {
     // And return true
     true
   }
+
+  def onItemClick (parent: AdapterView[_], view: View, position: Int, id: Long) = {
+    if (MovieListView.movies != null) {
+      MovieListView.movies(position).poster onSuccess {
+        case poster => {
+          val intent = new Intent(this, classOf[MovieInfoView])
+          intent.setAction (Intent.ACTION_VIEW)
+          intent.putExtra ("movie", position)
+          startActivity (intent)
+        }
+      }
+    }
+  }
+}
+
+object MovieListView {
+  var movies: Array[Movie] = null
 }
