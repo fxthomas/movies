@@ -39,6 +39,7 @@ object Trakt {
   import Util._
 
   var authHash: Option[String] = None
+  var isLoggedIn = false
 
   /**
    * Returns the Trakt API URL corresponding to the resource
@@ -73,11 +74,17 @@ object Trakt {
     res.send
   }
 
+  def test ()(implicit apiKey: String) = {
+    val res = HttpRequest.get(url("account/test"))
+    for (h <- authHash) res.setHeader ("Authorization", s"Basic $h")
+    res.send
+  }
+
   def login (username: String, password: String) = {
     authHash = Some(Base64.encodeToString(s"$username:$password".getBytes, Base64.NO_WRAP))
   }
 
-  def login (hash: String) = { authHash = Some(hash) }
+  def login (hash: String) = { authHash = Some(hash); isLoggedIn = true }
 
-  def logout () = { authHash = None }
+  def logout () = { authHash = None; isLoggedIn = false }
 }

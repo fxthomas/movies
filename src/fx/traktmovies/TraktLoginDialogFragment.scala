@@ -8,11 +8,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.LinearLayout
 import android.widget.EditText
+import android.widget.Toast
+import android.util.Log
 
-class TraktLoginDialogFragment extends DialogFragment {
+import scala.concurrent._
+import ExecutionContext.Implicits.global
+
+class TraktLoginDialogFragment(onLoggedIn: Boolean => Unit) extends DialogFragment {
+  import Configuration._
+  import Util._
 
   override def onCreateDialog(savedInstanceState: Bundle) = {
-    val v = getActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE)
+    val context = getActivity
+    val v = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)
     .asInstanceOf[LayoutInflater]
     .inflate(R.layout.trakt_login, null)
 
@@ -28,11 +36,37 @@ class TraktLoginDialogFragment extends DialogFragment {
         // Setup the Trakt object
         Trakt.login(usernameField.getText.toString, passwordField.getText.toString)
 
-        // Save login info to the preferences
-        getActivity.getSharedPreferences("trakt",0)
-        .edit
-        .putString("auth_hash", Trakt.authHash.get)
-        .commit
+        // Test login
+        val f = future { Trakt.test }
+        f onSuccess {
+          case r => {
+            Log.i ("TraktLogin", "Logged in!")
+            ui(context) {
+              // Save results
+              context.getSharedPreferences("trakt",0)
+              .edit
+              .putString("auth_hash", Trakt.authHash.get)
+              .commit
+
+              // Display message to the user
+              Toast.makeText(context, "Succesful!", Toast.LENGTH_SHORT).show
+
+              // Run onLoggedIn
+              onLoggedIn(true)
+            }
+          }
+        }
+
+        f onFailure {
+          case e => {
+            Trakt.logout
+            Log.w ("TraktLogin", "Failed with " + e.getMessage)
+            ui(context) {
+              Toast.makeText(context, "Unable to reach Trakt", Toast.LENGTH_SHORT).show
+              onLoggedIn(false)
+            }
+          }
+        }
       }
     })
     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

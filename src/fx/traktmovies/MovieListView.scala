@@ -144,10 +144,16 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
     loginMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
       override def onMenuItemClick(item: MenuItem) = {
-        (new TraktLoginDialogFragment).show(getFragmentManager, "dialog")
+        if (Trakt.isLoggedIn) Trakt.logout
+        else (new TraktLoginDialogFragment(b => {
+          loginMenuItem.setTitle(if (b) "Logout" else "Login")
+        })).show(getFragmentManager, "dialog")
         true
       }
     })
+
+    if (Trakt.isLoggedIn) loginMenuItem.setTitle ("Logout")
+    else loginMenuItem.setTitle ("Login")
 
     return true;
   }
