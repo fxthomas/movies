@@ -1,0 +1,11 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_login"
+      android:title="@string/menu_login"
+      android:orderInCategory="100"
+      android:showAsAction="never" />
+    <item android:id="@+id/menu_mark_seen"
+      android:title="@string/menu_mark_seen"
+      android:icon="@drawable/ic_cab_done_holo_dark"
+      android:orderInCategory="100"
+      android:showAsAction="ifRoom" />
+</menu>

@@ -1,0 +1,20 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <EditText
+      android:id="@+id/trakt_login_username"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:hint="Username" />
+
+    <EditText
+      android:id="@+id/trakt_login_password"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:inputType="textPassword"
+      android:hint="Password" />
+
+</LinearLayout>

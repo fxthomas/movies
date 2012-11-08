@@ -6,6 +6,7 @@ import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.LayoutInflater
@@ -70,6 +71,7 @@ class MovieAdapter(context: Context, movies: Array[Movie])
 
 class MovieListView extends Activity with SearchView.OnQueryTextListener with AdapterView.OnItemClickListener {
   import Util._
+  import Configuration._
 
   var progressView: ProgressBar = null
   var listView: GridView = null
@@ -121,6 +123,9 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     listView = findViewById(R.id.movie_list).asInstanceOf[GridView]
     listView.setOnItemClickListener(this)
 
+    // Login to trakt, if possible
+    Trakt.login (getSharedPreferences("trakt",0).getString("auth_hash", null))
+
     // Handle intent, if necessary
     handleIntent(getIntent())
   }
@@ -134,6 +139,16 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     // Configure search view
     searchView = menu.findItem(R.id.menu_search).getActionView().asInstanceOf[SearchView]
     searchView.setOnQueryTextListener(this)
+
+    // Configure login button
+    val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
+    loginMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+      override def onMenuItemClick(item: MenuItem) = {
+        (new TraktLoginDialogFragment).show(getFragmentManager, "dialog")
+        true
+      }
+    })
+
     return true;
   }
 
