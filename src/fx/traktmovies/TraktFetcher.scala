@@ -20,7 +20,7 @@ case class Movie (
   tmdb_id: Option[String],
   year: Long,
   images: Map[String, String],
-  overview: String) {
+  overview: Option[String]) {
 
   // Convert movie to string
   override def toString() = title + " (" + year + ")"

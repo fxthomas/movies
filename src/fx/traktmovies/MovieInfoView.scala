@@ -36,7 +36,7 @@ class MovieInfoView extends Activity with DefaultActivity {
     // Run default setup
     setupActivity
   }
-  
+
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
     // Inflate menu from XML
     getMenuInflater().inflate(R.menu.activity_movieinfo, menu);
@@ -67,7 +67,7 @@ class MovieInfoView extends Activity with DefaultActivity {
     })
 
     // Run default setup
-    setupContextMenu(menu)
+    setupOptionsMenu(menu)
 
     return true;
   }
@@ -80,7 +80,7 @@ class MovieInfoView extends Activity with DefaultActivity {
 
       // Set views
       titleView.setText(movie.title)
-      descriptionView.setText(movie.overview)
+      for (o <- movie.overview) descriptionView.setText(o)
       movie.poster onSuccess { case b => posterView.setImageBitmap(b) }
 
     // If the movie index does not exist

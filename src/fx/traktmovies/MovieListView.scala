@@ -136,7 +136,7 @@ with AdapterView.OnItemClickListener {
     searchView.setOnQueryTextListener(this)
 
     // Run default setup
-    setupContextMenu(menu)
+    setupOptionsMenu(menu)
 
     return true;
   }

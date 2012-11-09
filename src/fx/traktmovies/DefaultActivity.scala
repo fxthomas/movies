@@ -31,11 +31,19 @@ trait DefaultActivity extends Activity {
     handleIntent(getIntent)
   }
 
-  def setupContextMenu(menu: Menu) = {
+  override def onPrepareOptionsMenu(menu: Menu): Boolean = {
+    val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
+    if (Trakt.isLoggedIn) loginMenuItem.setTitle ("Logout")
+    else loginMenuItem.setTitle ("Login")
+
+    return true
+  }
+
+  def setupOptionsMenu(menu: Menu) = {
     // Configure login button
     val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
     loginMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-      override def onMenuItemClick(item: MenuItem) = {
+      override def onMenuItemClick(item: MenuItem): Boolean = {
         // If we're logged in, we log out
         if (Trakt.isLoggedIn) {
           configuration.logout
@@ -47,12 +55,10 @@ trait DefaultActivity extends Activity {
             loginMenuItem.setTitle(if(b) "Logout" else "Login")
           })
         }
-        true
+
+        return true
       }
     })
-
-    if (Trakt.isLoggedIn) loginMenuItem.setTitle ("Logout")
-    else loginMenuItem.setTitle ("Login")
   }
 
   def handleIntent(intent: Intent)
