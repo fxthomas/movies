@@ -77,7 +77,9 @@ with SearchView.OnQueryTextListener
 with AdapterView.OnItemClickListener
 with ActionBar.OnNavigationListener {
 
-  private val dropDownTitles = Array("Trending", "Watchlist")
+  private val dropDownTitlesIfLoggedIn = Array("Trending", "Watchlist")
+  private val dropDownTitlesIfNotLoggedIn = Array("Trending")
+
   var progressView: ProgressBar = null
   var listView: GridView = null
   var searchView: SearchView = null
@@ -90,14 +92,6 @@ with ActionBar.OnNavigationListener {
 
     // Configure action bar
     getActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST)
-    getActionBar.setListNavigationCallbacks(
-      new ArrayAdapter(
-        this,
-        android.R.layout.simple_spinner_dropdown_item,
-        dropDownTitles
-      ),
-      this
-    )
 
     // Configure subviews
     progressView = findViewById(R.id.movie_list_progress).asInstanceOf[ProgressBar]
@@ -122,9 +116,22 @@ with ActionBar.OnNavigationListener {
     return true;
   }
 
+  override def onLoginStatusChanged(loggedIn: Boolean) = {
+    getActionBar.setListNavigationCallbacks(
+      new ArrayAdapter(
+        this,
+        android.R.layout.simple_spinner_dropdown_item,
+        if (loggedIn) dropDownTitlesIfLoggedIn
+        else dropDownTitlesIfNotLoggedIn
+      ),
+      this
+    )
+  }
+
   def onNavigationItemSelected(itemPosition: Int, itemId: Long): Boolean = {
     itemPosition match {
       case 0 => displayTrendingMovies
+      case 1 => displayWatchlistMovies
       case _ => ()
     }
     return true
@@ -132,7 +139,10 @@ with ActionBar.OnNavigationListener {
 
   def getDropDownView(position: Int, convertView: View, parent: ViewGroup): View = {
     val tv = new TextView(this)
-    tv.setText (dropDownTitles(position))
+    tv.setText (
+      if (Trakt.isLoggedIn) dropDownTitlesIfLoggedIn(position)
+      else dropDownTitlesIfNotLoggedIn(position)
+    )
     return tv
   }
 
@@ -169,6 +179,9 @@ with ActionBar.OnNavigationListener {
 
   def displayTrendingMovies() =
     displayMovies (future { Trakt.trendingMovies })
+
+  def displayWatchlistMovies() =
+    displayMovies (future { Trakt.watchlistMovies })
   
   def handleIntent(intent: Intent) = {
     if (Intent.ACTION_SEARCH equals (intent.getAction())) {

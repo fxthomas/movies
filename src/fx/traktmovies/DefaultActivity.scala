@@ -28,6 +28,7 @@ trait DefaultActivity extends Activity {
   def setupActivity() = {
     configuration = new Configuration(this)
     configuration.restore_login
+    onLoginStatusChanged(Trakt.isLoggedIn)
     handleIntent(getIntent)
   }
 
@@ -48,11 +49,13 @@ trait DefaultActivity extends Activity {
         if (Trakt.isLoggedIn) {
           configuration.logout
           loginMenuItem.setTitle("Login")
+          onLoginStatusChanged(false)
 
         // If we're not, try to login
         } else {
           TraktLoginDialogFragment.show(DefaultActivity.this, configuration, b => {
             loginMenuItem.setTitle(if(b) "Logout" else "Login")
+            onLoginStatusChanged(b)
           })
         }
 
@@ -61,6 +64,7 @@ trait DefaultActivity extends Activity {
     })
   }
 
+  def onLoginStatusChanged(loggedIn: Boolean) = {}
   def handleIntent(intent: Intent)
   override def onNewIntent(intent: Intent) = { setIntent(intent); handleIntent(intent) }
 }

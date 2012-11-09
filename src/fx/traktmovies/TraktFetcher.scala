@@ -84,6 +84,18 @@ object Trakt {
   }
 
   /**
+   * Get user watchlist
+   */
+  def watchlistMovies ()(implicit apiKey: String): Array[Movie] = {
+    authUsername map { case n => {
+      val enc = java.net.URLEncoder.encode (n, "UTF-8")
+      val res = HttpRequest.get(url("user/watchlist/movies.json", enc))
+      for (h <- authHash) res.setHeader("Authorization", s"Basic $h")
+      res.send.message.asJson.convertTo[Array[Movie]]
+    }} getOrElse Array()
+  }
+
+  /**
    * Mark a movie as seen
    */
   def mark_seen (movie: Movie)(implicit apiKey: String) = {
