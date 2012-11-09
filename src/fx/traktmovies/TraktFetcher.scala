@@ -14,7 +14,14 @@ import android.util.Base64
 /**
  * Case class containing movie data
  */
-case class Movie (title: String, imdb_id: String, year: Long, images: Map[String, String], overview: String) {
+case class Movie (
+  title: String,
+  imdb_id: Option[String],
+  tmdb_id: Option[String],
+  year: Long,
+  images: Map[String, String],
+  overview: String) {
+
   // Convert movie to string
   override def toString() = title + " (" + year + ")"
 
@@ -28,7 +35,7 @@ case class Movie (title: String, imdb_id: String, year: Long, images: Map[String
 }
 
 object MovieJsonProtocol extends DefaultJsonProtocol {
-  implicit val movieFormat = jsonFormat(Movie, "title", "imdb_id", "year", "images", "overview")
+  implicit val movieFormat = jsonFormat(Movie, "title", "imdb_id", "tmdb_id", "year", "images", "overview")
 }
 
 /**
@@ -36,7 +43,6 @@ object MovieJsonProtocol extends DefaultJsonProtocol {
  */
 object Trakt {
   import MovieJsonProtocol._
-  import Util._
 
   var authHash: Option[String] = None
   var isLoggedIn = false
@@ -68,23 +74,39 @@ object Trakt {
   }
 
   def mark_seen (movie: Movie)(implicit apiKey: String) = {
-    val data = s"""{"movies":[{"imdb_id":"${movie.imdb_id}"}]}"""
+    val data =
+      if(movie.imdb_id.isEmpty)
+        s"""{"movies":[{"tmdb_id":"${movie.tmdb_id.get}"}]}"""
+      else
+        s"""{"movies":[{"imdb_id":"${movie.imdb_id.get}"}]}"""
+
     val res = HttpRequest.post(url("movie/seen"), data)
     for (h <- authHash) res.setHeader("Authorization", s"Basic $h")
     res.send
   }
 
-  def test ()(implicit apiKey: String) = {
-    val res = HttpRequest.get(url("account/test"))
-    for (h <- authHash) res.setHeader ("Authorization", s"Basic $h")
-    res.send
+  def login (hash: String, testLogin: Boolean = true)(implicit apiKey: String): String = {
+    if (testLogin) {
+      // Create login test request
+      val res = HttpRequest.get(url("account/test"))
+
+      // Set auth header
+      res.setHeader ("Authorization", s"Basic $hash")
+
+      // Send request
+      res.send
+    }
+
+    // Prepare variables
+    authHash = Option(hash)
+    isLoggedIn = true
+
+    // Return the hash for future use
+    hash
   }
 
-  def login (username: String, password: String) = {
-    authHash = Some(Base64.encodeToString(s"$username:$password".getBytes, Base64.NO_WRAP))
-  }
-
-  def login (hash: String) = { authHash = Some(hash); isLoggedIn = true }
+  def login (username: String, password: String)(implicit apiKey: String): String =
+    login(Base64.encodeToString(s"$username:$password".getBytes, Base64.NO_WRAP), true)
 
   def logout () = { authHash = None; isLoggedIn = false }
 }

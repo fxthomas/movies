@@ -6,8 +6,6 @@ import java.io.IOException
 import java.net.URL
 import java.net.HttpURLConnection
 
-import android.util.Log
-
 case class HttpResponse(code: Int, message: String)
 
 case class HttpRequest(method: String, urlString: String) {
@@ -18,7 +16,7 @@ case class HttpRequest(method: String, urlString: String) {
     "Content-Type" -> "application/json"
   )
 
-  def setData(s: String) = { data = Some(s) }
+  def setData(s: String) = { data = Option(s) }
   def setHeader(header: String, value: String) = { headers(header) = value }
 
   def send(): HttpResponse = {
@@ -49,7 +47,6 @@ case class HttpRequest(method: String, urlString: String) {
       }
 
       // Read data from server
-      Log.i ("Http", "Reading data...")
       val is = urlConnection.getInputStream
       val br = new BufferedReader(new InputStreamReader(is))
 
@@ -60,7 +57,7 @@ case class HttpRequest(method: String, urlString: String) {
       if (code >= 400) throw new IOException(s"Request to $urlString failed with code $code")
 
       // Set response
-      response = Stream.continually(br.readLine).takeWhile(null !=).toList.mkString("\n")
+      response = Stream.continually(br.readLine).takeWhile(null !=).toList.mkString
 
     // And, at the end, close the connection and return the string
     } finally { urlConnection.disconnect }

@@ -1,5 +1,6 @@
 package fx.traktmovies
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.DialogFragment
 import android.content.Context
@@ -14,12 +15,16 @@ import android.util.Log
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 
-class TraktLoginDialogFragment(onLoggedIn: Boolean => Unit) extends DialogFragment {
-  import Configuration._
-  import Util._
+object TraktLoginDialogFragment {
+  def show(activity: Activity, configuration: Configuration, onLoggedIn: Boolean => Unit) = {
+    val f = new TraktLoginDialogFragment(configuration, onLoggedIn)
+    f.show(activity.getFragmentManager,"dialog")
+  }
+}
 
+class TraktLoginDialogFragment(configuration: Configuration, onLoggedIn: Boolean => Unit) extends DialogFragment {
   override def onCreateDialog(savedInstanceState: Bundle) = {
-    val context = getActivity
+    val context = getActivity.asInstanceOf[DefaultActivity]
     val v = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)
     .asInstanceOf[LayoutInflater]
     .inflate(R.layout.trakt_login, null)
@@ -34,39 +39,11 @@ class TraktLoginDialogFragment(onLoggedIn: Boolean => Unit) extends DialogFragme
         val passwordField = v.findViewById(R.id.trakt_login_password).asInstanceOf[EditText]
 
         // Setup the Trakt object
-        Trakt.login(usernameField.getText.toString, passwordField.getText.toString)
+        val f = configuration.login(usernameField.getText.toString, passwordField.getText.toString)
 
         // Test login
-        val f = future { Trakt.test }
-        f onSuccess {
-          case r => {
-            Log.i ("TraktLogin", "Logged in!")
-            ui(context) {
-              // Save results
-              context.getSharedPreferences("trakt",0)
-              .edit
-              .putString("auth_hash", Trakt.authHash.get)
-              .commit
-
-              // Display message to the user
-              Toast.makeText(context, "Succesful!", Toast.LENGTH_SHORT).show
-
-              // Run onLoggedIn
-              onLoggedIn(true)
-            }
-          }
-        }
-
-        f onFailure {
-          case e => {
-            Trakt.logout
-            Log.w ("TraktLogin", "Failed with " + e.getMessage)
-            ui(context) {
-              Toast.makeText(context, "Unable to reach Trakt", Toast.LENGTH_SHORT).show
-              onLoggedIn(false)
-            }
-          }
-        }
+        f onSuccess { case r => context.ui { onLoggedIn(true) } }
+        f onFailure { case e => context.ui { onLoggedIn(false) } }
       }
     })
     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

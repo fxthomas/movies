@@ -16,9 +16,7 @@ import android.graphics.Bitmap
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 
-class MovieInfoView extends Activity {
-  import Util._
-  import Configuration._
+class MovieInfoView extends Activity with DefaultActivity {
 
   var posterView: ImageView = null
   var titleView: TextView = null
@@ -35,13 +33,9 @@ class MovieInfoView extends Activity {
     titleView = findViewById(R.id.movie_info_title).asInstanceOf[TextView]
     descriptionView = findViewById(R.id.movie_info_description).asInstanceOf[TextView]
 
-    // Login to trakt, if possible
-    Trakt.login (getSharedPreferences("trakt",0).getString("auth_hash", null))
-
-    // Handle intent, if necessary
-    handleIntent(getIntent())
+    // Run default setup
+    setupActivity
   }
-
   
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
     // Inflate menu from XML
@@ -56,14 +50,14 @@ class MovieInfoView extends Activity {
 
         // On success, show it to the user
         f onSuccess { case e => 
-          ui(MovieInfoView.this) {
+          ui {
             Toast.makeText(MovieInfoView.this, "Marked as seen", Toast.LENGTH_SHORT).show
           }
         }
 
         // If it failed, tell the user as well, and log the exception
         f onFailure { case e =>
-          ui(MovieInfoView.this) {
+          ui {
             Toast.makeText(MovieInfoView.this, "Unable to reach Trakt", Toast.LENGTH_SHORT).show
             Log.w ("MovieInfoView", "Unable to reach Trakt: " + e.getMessage)
           }
@@ -72,24 +66,11 @@ class MovieInfoView extends Activity {
       }
     })
 
-    val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
-    loginMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-      override def onMenuItemClick(item: MenuItem) = {
-        if (Trakt.isLoggedIn) Trakt.logout
-        else (new TraktLoginDialogFragment(b => {
-          loginMenuItem.setTitle(if(b) "Logout" else "Login")
-        })).show(getFragmentManager, "dialog")
-        true
-      }
-    })
-
-    if (Trakt.isLoggedIn) loginMenuItem.setTitle ("Logout")
-    else loginMenuItem.setTitle ("Login")
+    // Run default setup
+    setupContextMenu(menu)
 
     return true;
   }
-
-  override def onNewIntent(intent: Intent) = { setIntent(intent); handleIntent(intent) }
 
   def updateMovie(movieIndex: Int) = {
     // If the movie index exists

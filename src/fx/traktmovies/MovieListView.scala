@@ -38,7 +38,6 @@ class MovieViewHolder(v: View) {
 
 class MovieAdapter(context: Context, movies: Array[Movie])
   extends ArrayAdapter[Movie](context, R.layout.movie_list_row, movies) {
-  import Util._
 
   override def getView(position: Int, convertView: View, parent: ViewGroup): View = {
     // Retrieve row
@@ -59,7 +58,7 @@ class MovieAdapter(context: Context, movies: Array[Movie])
 
     // Download image (if necessary)
     movies(position).poster onSuccess {
-      case bitmap => ui(context.asInstanceOf[Activity]) {
+      case bitmap => context.asInstanceOf[DefaultActivity].ui {
         if (holder.f_poster == movies(position).poster)
           holder.poster.setImageBitmap(bitmap)
       }
@@ -69,9 +68,10 @@ class MovieAdapter(context: Context, movies: Array[Movie])
   }
 }
 
-class MovieListView extends Activity with SearchView.OnQueryTextListener with AdapterView.OnItemClickListener {
-  import Util._
-  import Configuration._
+class MovieListView extends Activity
+with DefaultActivity
+with SearchView.OnQueryTextListener
+with AdapterView.OnItemClickListener {
 
   var progressView: ProgressBar = null
   var listView: GridView = null
@@ -85,7 +85,7 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     val f_movies = future { Trakt.searchMovie(movie) }
     f_movies onSuccess {
       case m => {
-        ui(this) {
+        ui {
           MovieListView.movies = m
           listView.setAdapter(new MovieAdapter(this,m))
           listView.setVisibility(View.VISIBLE)
@@ -96,11 +96,11 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     f_movies onFailure {
       case e: Exception => {
         Log.i("Future-Exception", e.toString)
-        ui(this) {
+        ui {
           listView.setAdapter(null)
           listView.setVisibility(View.VISIBLE)
           progressView.setVisibility(View.GONE)
-          error(this, "Trakt is unavailable").show
+          error("Trakt is unavailable").show
         }
       }
     }
@@ -123,14 +123,9 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     listView = findViewById(R.id.movie_list).asInstanceOf[GridView]
     listView.setOnItemClickListener(this)
 
-    // Login to trakt, if possible
-    Trakt.login (getSharedPreferences("trakt",0).getString("auth_hash", null))
-
-    // Handle intent, if necessary
-    handleIntent(getIntent())
+    // Run default setup
+    setupActivity
   }
-
-  override def onNewIntent(intent: Intent) = { setIntent(intent); handleIntent(intent) }
 
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
     // Inflate menu from XML
@@ -140,20 +135,8 @@ class MovieListView extends Activity with SearchView.OnQueryTextListener with Ad
     searchView = menu.findItem(R.id.menu_search).getActionView().asInstanceOf[SearchView]
     searchView.setOnQueryTextListener(this)
 
-    // Configure login button
-    val loginMenuItem = menu.findItem(R.id.menu_login).asInstanceOf[MenuItem]
-    loginMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-      override def onMenuItemClick(item: MenuItem) = {
-        if (Trakt.isLoggedIn) Trakt.logout
-        else (new TraktLoginDialogFragment(b => {
-          loginMenuItem.setTitle(if (b) "Logout" else "Login")
-        })).show(getFragmentManager, "dialog")
-        true
-      }
-    })
-
-    if (Trakt.isLoggedIn) loginMenuItem.setTitle ("Logout")
-    else loginMenuItem.setTitle ("Login")
+    // Run default setup
+    setupContextMenu(menu)
 
     return true;
   }
