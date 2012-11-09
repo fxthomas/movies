@@ -3,6 +3,7 @@ package fx.traktmovies
 import android.os.Bundle
 import android.app.Activity
 import android.app.SearchManager
+import android.app.ActionBar
 import android.content.Context
 import android.content.Intent
 import android.view.Menu
@@ -17,9 +18,11 @@ import android.widget.GridView
 import android.widget.TextView
 import android.widget.ImageView
 import android.widget.SearchView
-import android.widget.ProgressBar
-import android.widget.ArrayAdapter
 import android.widget.AdapterView
+import android.widget.ProgressBar
+import android.widget.BaseAdapter
+import android.widget.ArrayAdapter
+import android.widget.SpinnerAdapter
 import android.util.Log
 import android.graphics.drawable.Drawable
 import android.graphics.Bitmap
@@ -71,52 +74,30 @@ class MovieAdapter(context: Context, movies: Array[Movie])
 class MovieListView extends Activity
 with DefaultActivity
 with SearchView.OnQueryTextListener
-with AdapterView.OnItemClickListener {
+with AdapterView.OnItemClickListener
+with ActionBar.OnNavigationListener {
 
+  private val dropDownTitles = Array("Trending", "Watchlist")
   var progressView: ProgressBar = null
   var listView: GridView = null
   var searchView: SearchView = null
-
-  def searchMovie(movie: String) = {
-    MovieListView.movies = null
-    progressView.setVisibility(View.VISIBLE)
-    listView.setVisibility(View.GONE)
-
-    val f_movies = future { Trakt.searchMovie(movie) }
-    f_movies onSuccess {
-      case m => {
-        ui {
-          MovieListView.movies = m
-          listView.setAdapter(new MovieAdapter(this,m))
-          listView.setVisibility(View.VISIBLE)
-          progressView.setVisibility(View.GONE)
-        }
-      }
-    }
-    f_movies onFailure {
-      case e: Exception => {
-        Log.i("Future-Exception", e.toString)
-        ui {
-          listView.setAdapter(null)
-          listView.setVisibility(View.VISIBLE)
-          progressView.setVisibility(View.GONE)
-          error("Trakt is unavailable").show
-        }
-      }
-    }
-  }
-  
-  def handleIntent(intent: Intent) = {
-    if (Intent.ACTION_SEARCH equals (intent.getAction())) {
-      searchMovie (intent.getStringExtra (SearchManager.QUERY))
-    }
-  }
 
   override def onCreate(savedInstanceState: Bundle) = {
     // Configure activity
     super.onCreate (savedInstanceState);
     requestWindowFeature (Window.FEATURE_INDETERMINATE_PROGRESS)
     setContentView(R.layout.activity_main)
+
+    // Configure action bar
+    getActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST)
+    getActionBar.setListNavigationCallbacks(
+      new ArrayAdapter(
+        this,
+        android.R.layout.simple_spinner_dropdown_item,
+        dropDownTitles
+      ),
+      this
+    )
 
     // Configure subviews
     progressView = findViewById(R.id.movie_list_progress).asInstanceOf[ProgressBar]
@@ -139,6 +120,60 @@ with AdapterView.OnItemClickListener {
     setupOptionsMenu(menu)
 
     return true;
+  }
+
+  def onNavigationItemSelected(itemPosition: Int, itemId: Long): Boolean = {
+    itemPosition match {
+      case 0 => displayTrendingMovies
+      case _ => ()
+    }
+    return true
+  }
+
+  def getDropDownView(position: Int, convertView: View, parent: ViewGroup): View = {
+    val tv = new TextView(this)
+    tv.setText (dropDownTitles(position))
+    return tv
+  }
+
+  def displayMovies(f_movies: Future[Array[Movie]]) = {
+    MovieListView.movies = null
+    progressView.setVisibility(View.VISIBLE)
+    listView.setVisibility(View.GONE)
+
+    f_movies onSuccess {
+      case m => {
+        ui {
+          MovieListView.movies = m
+          listView.setAdapter(new MovieAdapter(this,m))
+          listView.setVisibility(View.VISIBLE)
+          progressView.setVisibility(View.GONE)
+        }
+      }
+    }
+    f_movies onFailure {
+      case e: Exception => {
+        Log.i("Future-Exception", e.toString)
+        ui {
+          listView.setAdapter(null)
+          listView.setVisibility(View.VISIBLE)
+          progressView.setVisibility(View.GONE)
+          error("Trakt is unavailable").show
+        }
+      }
+    }
+  }
+
+  def searchMovie(movie: String) =
+    displayMovies (future { Trakt.searchMovie(movie) })
+
+  def displayTrendingMovies() =
+    displayMovies (future { Trakt.trendingMovies })
+  
+  def handleIntent(intent: Intent) = {
+    if (Intent.ACTION_SEARCH equals (intent.getAction())) {
+      searchMovie (intent.getStringExtra (SearchManager.QUERY))
+    }
   }
 
   def onQueryTextChange(text: String) = { true }

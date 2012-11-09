@@ -40,6 +40,7 @@ class Configuration(context: Context)(implicit apiKey: String) {
   def login(username: String, password: String) = {
     // Remove previously saved login info
     remove ("auth_hash")
+    remove ("auth_username")
 
     // Try logging in, and test connection
     val logged_in = future { Trakt.login(username, password) }
@@ -49,6 +50,7 @@ class Configuration(context: Context)(implicit apiKey: String) {
       case hash => {
         context.asInstanceOf[DefaultActivity].ui {
           setString("auth_hash", hash)
+          setString("auth_username", username)
           Toast.makeText(context, "Logged in", Toast.LENGTH_SHORT).show
         }
       }
@@ -73,6 +75,7 @@ class Configuration(context: Context)(implicit apiKey: String) {
    */
   def logout() = {
     remove ("auth_hash")
+    remove ("auth_username")
     Trakt.logout
     Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show
   }
@@ -81,7 +84,11 @@ class Configuration(context: Context)(implicit apiKey: String) {
    * Restore login, if available
    */
   def restore_login() = {
-    getString("auth_hash").foreach(Trakt.login(_, false))
+    // Try restoring login
+    for (hash <- getString("auth_hash"); username <- getString("auth_username"))
+      Trakt.login_hash (hash, username)
+
+    // And return true if everything's okay
     Trakt.isLoggedIn
   }
 

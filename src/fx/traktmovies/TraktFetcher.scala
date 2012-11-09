@@ -45,6 +45,7 @@ object Trakt {
   import MovieJsonProtocol._
 
   var authHash: Option[String] = None
+  var authUsername: Option[String] = None
   var isLoggedIn = false
 
   /**
@@ -73,6 +74,18 @@ object Trakt {
     res.send.message.asJson.convertTo[Array[Movie]]
   }
 
+  /**
+   * Trending movies
+   */
+  def trendingMovies ()(implicit apiKey: String) = {
+    val res = HttpRequest.get(url("movies/trending.json"))
+    for (h <- authHash) res.setHeader("Authorization", s"Basic $h")
+    res.send.message.asJson.convertTo[Array[Movie]]
+  }
+
+  /**
+   * Mark a movie as seen
+   */
   def mark_seen (movie: Movie)(implicit apiKey: String) = {
     val data =
       if(movie.imdb_id.isEmpty)
@@ -85,28 +98,23 @@ object Trakt {
     res.send
   }
 
-  def login (hash: String, testLogin: Boolean = true)(implicit apiKey: String): String = {
-    if (testLogin) {
-      // Create login test request
-      val res = HttpRequest.get(url("account/test"))
-
-      // Set auth header
-      res.setHeader ("Authorization", s"Basic $hash")
-
-      // Send request
-      res.send
-    }
-
-    // Prepare variables
+  def login_hash (username: String, hash: String)(implicit apiKey: String): String = {
+    authUsername = Option(username)
     authHash = Option(hash)
-    isLoggedIn = true
-
-    // Return the hash for future use
+    isLoggedIn = !authUsername.isEmpty && !authHash.isEmpty
     hash
   }
 
-  def login (username: String, password: String)(implicit apiKey: String): String =
-    login(Base64.encodeToString(s"$username:$password".getBytes, Base64.NO_WRAP), true)
+  def login (username: String, password: String)(implicit apiKey: String): String = {
+    // Create login test request
+    val hash = Base64.encodeToString(s"$username:$password".getBytes, Base64.NO_WRAP)
+    val res = HttpRequest.get(url("account/test"))
+    res.setHeader ("Authorization", s"Basic $hash")
+    res.send
+
+    // And login with hash if everything's okay
+    login_hash(username, hash)
+  }
 
   def logout () = { authHash = None; isLoggedIn = false }
 }
