@@ -34,6 +34,8 @@ class MovieViewHolder(v: View) {
   // View fields
   val title = v.findViewById(R.id.movie_title).asInstanceOf[TextView]
   val poster = v.findViewById(R.id.movie_poster).asInstanceOf[ImageView]
+  val loved = v.findViewById(R.id.movie_loved).asInstanceOf[ImageView]
+  val watched = v.findViewById(R.id.movie_watched).asInstanceOf[ImageView]
 
   // Registered futures
   var f_poster: Future[Bitmap] = null
@@ -57,6 +59,8 @@ class MovieAdapter(context: Context, movies: Array[Movie])
     // Set default view parameters
     holder.title.setText(movies(position).title)
     holder.poster.setImageResource(android.R.color.transparent)
+    holder.loved.setVisibility(if (movies(position).isLoved) View.VISIBLE else View.GONE) 
+    holder.watched.setVisibility(if (movies(position).isWatched) View.VISIBLE else View.GONE)
     holder.f_poster = movies(position).poster
 
     // Download image (if necessary)
@@ -153,6 +157,7 @@ with ActionBar.OnNavigationListener {
 
     f_movies onSuccess {
       case m => {
+        Log.i ("MovieListView", s"Got movies: " + m.map(_.rating.toString).mkString(","))
         ui {
           MovieListView.movies = m
           listView.setAdapter(new MovieAdapter(this,m))

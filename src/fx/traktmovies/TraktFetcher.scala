@@ -12,18 +12,33 @@ import android.util.Log
 import android.util.Base64
 
 /**
+ * Trakt ratings
+ */
+sealed abstract class Rating
+case object Love extends Rating
+case object Hate extends Rating
+case object NotRated extends Rating
+
+/**
  * Case class containing movie data
  */
 case class Movie (
   title: String,
   imdb_id: Option[String],
   tmdb_id: Option[String],
+  watched: Option[Boolean],
+  rating: Option[Rating],
   year: Long,
   images: Map[String, String],
   overview: Option[String]) {
 
   // Convert movie to string
   override def toString() = title + " (" + year + ")"
+
+  // Convenience
+  val isWatched = watched getOrElse false
+  val isLoved = rating match { case Some(Love) => true; case _ => false }
+  val isHated = rating match { case Some(Hate) => true; case _ => false }
 
   // Future for the poster image
   lazy val poster: Future[Bitmap] = future {
@@ -35,7 +50,21 @@ case class Movie (
 }
 
 object MovieJsonProtocol extends DefaultJsonProtocol {
-  implicit val movieFormat = jsonFormat(Movie, "title", "imdb_id", "tmdb_id", "year", "images", "overview")
+  implicit val movieFormat = jsonFormat(Movie, "title", "imdb_id", "tmdb_id", "watched", "rating", "year", "images", "overview")
+  implicit object ratingFormat extends RootJsonFormat[Rating] {
+    def write(c: Rating) = c match {
+      case Love => JsString("love")
+      case Hate => JsString("hate")
+      case _ => JsFalse
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString("love") => Love
+      case JsString("hate") => Hate
+      case JsFalse => NotRated
+      case _ => deserializationError ("Expected love, hate or false")
+    }
+  }
 }
 
 /**

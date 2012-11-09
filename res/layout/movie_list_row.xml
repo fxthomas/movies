@@ -20,4 +20,18 @@
         android:textSize="8pt"
         android:textColor="#ffeeeeee" />
 
+    <ImageView
+      android:id="@+id/movie_loved"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:src="@drawable/overlay_loved"
+      android:layout_gravity="top|right" />
+
+    <ImageView
+      android:id="@+id/movie_watched"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:src="@drawable/overlay_watched"
+      android:layout_gravity="top|right" />
+
 </FrameLayout>

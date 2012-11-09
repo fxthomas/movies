@@ -86,7 +86,7 @@ class Configuration(context: Context)(implicit apiKey: String) {
   def restore_login() = {
     // Try restoring login
     for (hash <- getString("auth_hash"); username <- getString("auth_username"))
-      Trakt.login_hash (hash, username)
+      Trakt.login_hash (username, hash)
 
     // And return true if everything's okay
     Trakt.isLoggedIn
